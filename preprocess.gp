@@ -203,17 +203,79 @@ preprocess(forms) =
    [looks_reducible, looks_irreducible];
 }
 
-output_files() =
+\r cusp-forms
+\r modular-groups
+\r init
+
+labelcount = Map();
+
+/*
+  Currently, this skips 4 forms for the following [n, k, l]:
+  [23, 4, 2]: weight 1 (multiplicity 2)
+  [23, 5, 5]: genus 41
+  [24, 3, 5]: genus 73
+  [24, 3, 5]: genus 73
+
+  Furthermore, the case [13, 2, 3] yields a curve of genus 0
+  (see explanation in level_13_weight_2_mod_3.gp).
+*/
+output_files(forms) =
 {
-   my(forms = readvec("forms.gp"),
-      red, irred, l, n_0, chi_0, k, n, aplist);
+   my(red, irred, l, n_0, chi_0, k, n, aplist);
    [red, irred] = preprocess(forms);
    \\ TODO: output data for reducible forms
    for(i = 1, #red,
       [l, n_1, chi_1, n_2, chi_2, k] = red[i];
       print(red[i]));
-   \\ TODO: output data for irreducible forms
+   \\ Output data for irreducible forms
+   file = fileopen("irreducible.gp", "w");
    for(i = 1, #irred,
+      \\ print(irred[i]);
       [l, n_0, chi_0, k, n, aplist] = irred[i];
-      print([l, n_0, chi_0, k, n, aplist[1..15]]));
+      if(l == 2 && k == 4,
+	 print([n, k, l], ": skipping because of weight 1");
+	 next);
+      n_1 = if(k == 2, n, n * l);
+      Z_0 = znstar(n_0, 1);
+      Z_l = znstar(l, 1);
+      Z = znstar(n_1, 1);
+      chi = zncharinduce(Z_0, chi_0, Z);
+      if(k != 2,
+	 \\ [1]~ encodes the cyclotomic character, so
+	 \\ [k - 2]~ encodes its (k - 2)-nd power
+	 if(l != 2,
+	    chi = charmul(Z, chi, zncharinduce(Z_l, [k - 2]~, Z)));
+	 aplist = [x | x <- aplist, x[1] != l]);
+      z = if(l == 2, 1, znconreyexp(Z_l, [1]~));
+      H = charker(Z, chi);
+      G = Gamma_H(Z, H);
+      g = modular_group_genus(G);
+      print([n, k, l], ": genus ", g);
+      \\ Provisional label: GL2-l-N-beta-c
+      \\ (2 stands for the dimension)
+      beta = (k - 2) % (l - 1);
+      if(!mapisdefined(labelcount, [l, n, beta], &c),
+	 c = 1, c++);
+      mapput(labelcount, [l, n, beta], c);
+      label = concat(["GL2-", l, "-", n, "-", beta, "-", c]);
+      eps = [[x, chareval(Z, chi, x, [z, l - 1])] | x <- Z.gen];
+      for(j = 0, #aplist,
+	 coefs = aplist[1..j];
+	 iferr(f = eigenform(G, 2, l, eps, coefs),
+	       e, next, errname(e) == "e_USER");
+	 s = concat(["eigenform(Gamma_H(znstar(", n_1, ", 1), ", H, "), ",
+		     2, ", ", l, ", ", eps]);
+	 if(coefs != [], s = concat([s, ", ", coefs]));
+	 s = concat(s, ")");
+	 filewrite(file, s);
+	 extern(concat("mkdir -p ", label));
+	 makefile = fileopen(concat(label, "/Makefile"), "w");
+	 filewrite(makefile, concat("# genus ", g));
+	 filewrite(makefile, concat("FORM = ", s));
+	 filewrite(makefile, "PRIMES = 20");
+	 filewrite(makefile, concat("MAX_DEGREE = ", l + 1));
+	 filewrite(makefile, "include /home/peter/share/modgalrep/Makefile.form");
+	 fileclose(makefile);
+	 break));
+   fileclose(file);
 }

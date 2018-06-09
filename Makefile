@@ -7,9 +7,12 @@
 
 GP ?= gp -q
 
+irreducible.gp: forms.gp
+	echo "output_files(readvec(\"forms.gp\"));" | $(GP) -q preprocess.gp
+
 forms.gp: mod-2-reps.gp mod-3-reps.gp mod-5-reps.gp
 	> $@
 	for l in 2 3 5; do echo "convert(readvec(\"mod-$$l-reps.gp\"),$$l);" | $(GP) convert.gp >> $@; done
 
 mod-%-reps.gp: mod-%-reps.txt
-	grep '^<' $< | sed -e 's/<\[/[/' -e 's/]>/]/' -e 's/</[/g' -e 's/>/]/g' -e 's/,$$//' > $@
+	grep '^<' $< | sed -e 's/</[/g' -e 's/>/]/g' -e 's/,$$//' > $@
