@@ -210,14 +210,18 @@ preprocess(forms) =
 labelcount = Map();
 
 /*
-  Currently, this skips 4 forms for the following [n, k, l]:
-  [23, 4, 2]: weight 1 (multiplicity 2)
-  [23, 5, 5]: genus 41
-  [24, 3, 5]: genus 73
-  [24, 3, 5]: genus 73
+  There are known problems for the following values of [n, k, l]:
 
-  Furthermore, the case [13, 2, 3] yields a curve of genus 0
-  (see explanation in level_13_weight_2_mod_3.gp).
+  [23, 4, 2]: form comes from weight 1, leading to multiplicity 2
+	      (should now be in GL2-5-23-0-1.gp)
+
+  [13, 2, 3]: yields a curve of genus 0 (see explanation in
+	      level_13_weight_2_mod_3.gp)
+	      (should now be in GL2-3-13-0-2.gp)
+
+  [19, 3, 3]: yields a curve of genus 9 such that the Jacobian
+	      apparently does not contain the desired representation
+	      (label GL2-3-19-1-1)
 */
 output_files(forms) =
 {
@@ -232,9 +236,6 @@ output_files(forms) =
    for(i = 1, #irred,
       \\ print(irred[i]);
       [l, n_0, chi_0, k, n, aplist] = irred[i];
-      if(l == 2 && k == 4,
-	 print([n, k, l], ": skipping because of weight 1");
-	 next);
       n_1 = if(k == 2, n, n * l);
       Z_0 = znstar(n_0, 1);
       Z_l = znstar(l, 1);
