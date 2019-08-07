@@ -196,10 +196,11 @@ preprocess(forms) =
    for(i = 1, #looks_reducible,
       [params, forms] = looks_reducible[i];
       looks_reducible[i] = params);
-   \\ Pick the form with smallest level in each list.
+   \\ We sort the forms in each list by level and then
+   \\ lexicographically by the coefficients.
    for(i = 1, #looks_irreducible,
       [params, forms] = looks_irreducible[i];
-      looks_irreducible[i] = concat(params, vecsort(forms, 1)[1]));
+      looks_irreducible[i] = concat(params, [vecsort(forms)]));
    [looks_reducible, looks_irreducible];
 }
 
@@ -225,7 +226,8 @@ labelcount = Map();
 */
 output_files(forms) =
 {
-   my(red, irred, l, n_0, chi_0, k, n, aplist);
+   my(red, irred, l, n_0, chi_0, k, n, aplist,
+      file, labelfile, makefile, listfile);
    [red, irred] = preprocess(forms);
    \\ TODO: output data for reducible forms
    for(i = 1, #red,
@@ -233,9 +235,11 @@ output_files(forms) =
       print(red[i]));
    \\ Output data for irreducible forms
    file = fileopen("irreducible.gp", "w");
+   labelfile = fileopen("labels.txt", "w");
    for(i = 1, #irred,
       \\ print(irred[i]);
-      [l, n_0, chi_0, k, n, aplist] = irred[i];
+      [l, n_0, chi_0, k, forms] = irred[i];
+      [n, aplist] = forms[1];
       n_1 = if(k == 2, n, n * l);
       Z_0 = znstar(n_0, 1);
       Z_l = znstar(l, 1);
@@ -259,6 +263,11 @@ output_files(forms) =
 	 c = 1, c++);
       mapput(labelcount, [l, n, beta], c);
       label = concat(["GL2-", l, "-", n, "-", beta, "-", c]);
+      filewrite(labelfile, label);
+      extern(concat("mkdir -p ", label));
+      listfile = fileopen(concat(label, "/forms.txt"), "w");
+      apply(f -> filewrite(listfile, f), forms);
+      fileclose(listfile);
       eps = [[x, chareval(Z, chi, x, [z, l - 1])] | x <- Z.gen];
       for(j = 0, #aplist,
 	 coefs = aplist[1..j];
@@ -269,7 +278,6 @@ output_files(forms) =
 	 if(coefs != [], s = concat([s, ", ", coefs]));
 	 s = concat(s, ")");
 	 filewrite(file, s);
-	 extern(concat("mkdir -p ", label));
 	 makefile = fileopen(concat(label, "/Makefile"), "w");
 	 filewrite(makefile, concat("# genus ", g));
 	 filewrite(makefile, concat("FORM = ", s));
@@ -278,5 +286,6 @@ output_files(forms) =
 	 filewrite(makefile, "include /home/peter/share/modgalrep/Makefile.form");
 	 fileclose(makefile);
 	 break));
+   fileclose(labelfile);
    fileclose(file);
 }
