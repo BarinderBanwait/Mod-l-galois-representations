@@ -6,13 +6,27 @@
 # this repository).
 
 GP ?= gp -q
+SAGE ?= sage
 
-irreducible.gp: forms.gp
-	echo "output_files(readvec(\"forms.gp\"));" | $(GP) -q preprocess.gp
+all: labels.txt reducible.gp irreducible.gp
 
-forms.gp: mod-2-reps.gp mod-3-reps.gp mod-5-reps.gp
+reducible.gp: forms.gp
+	echo "output_reducible(preprocess(readvec(\"forms.gp\"))[1]);" | $(GP) -q preprocess.gp
+
+labels.txt irreducible.gp: forms.gp
+	echo "output_irreducible(preprocess(readvec(\"forms.gp\"))[2]);" | $(GP) -q preprocess.gp
+
+forms.gp: mod-2-forms.txt mod-3-forms.txt mod-5-forms.txt
 	> $@
-	for l in 2 3 5; do echo "convert(readvec(\"mod-$$l-reps.gp\"),$$l);" | $(GP) convert.gp >> $@; done
+	for l in 2 3 5; do echo "convert(readvec(\"mod-$$l-forms.txt\"),$$l);" | $(GP) convert.gp >> $@; done
 
-mod-%-reps.gp: mod-%-reps.txt
+mod-%-forms.txt: mod-%-reps.txt
 	grep '^<' $< | sed -e 's/</[/g' -e 's/>/]/g' -e 's/,$$//' > $@
+
+GL2-%-traces.txt: GL2-%.gp
+	$(SAGE) -c "from dual_pairs.dual_pair_import import dual_pair_import; print(dual_pair_import(\"$<\").frobenius_traces(200))" | sed -e s,\(,[,g -e s,\),],g > $@
+
+.PHONY: traces
+
+traces:
+	$(MAKE) `ls GL2-*.gp | sed -e s/.gp/-traces.txt/g`

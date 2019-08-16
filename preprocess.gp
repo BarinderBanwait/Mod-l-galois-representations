@@ -86,7 +86,7 @@ gather_reducible(pairs) =
    for(i = 1, #pairs,
       [form, chars] = pairs[i];
       [l, H, chi, z, k, aplist] = form;
-      key = concat([[l], chars, [k]]);
+      key = concat([[l], chars, [(k - 1) % (l - 1)]]);
       mapput(map, key, if(mapisdefined(map, key, &forms),
 			  concat(forms, [[H.mod, aplist]]),
 			  [[H.mod, aplist]])));
@@ -208,7 +208,16 @@ preprocess(forms) =
 \r modular-groups
 \r init
 
-labelcount = Map();
+output_reducible(red) =
+{
+   my(l, n_1, chi_1, n_2, chi_2, k,
+      file);
+   file = fileopen("reducible.gp", "w");
+   for(i = 1, #red,
+      [l, n_1, chi_1, n_2, chi_2, k] = red[i];
+      filewrite(file, red[i]));
+   fileclose(file);
+}
 
 /*
   There are known problems for the following values of [n, k, l]:
@@ -224,20 +233,14 @@ labelcount = Map();
 	      apparently does not contain the desired representation
 	      (label GL2-3-19-1-1)
 */
-output_files(forms) =
+output_irreducible(irred) =
 {
-   my(red, irred, l, n_0, chi_0, k, n, aplist,
+   my(l, n_0, chi_0, k, n, aplist, labelcount,
       file, labelfile, makefile, listfile);
-   [red, irred] = preprocess(forms);
-   \\ TODO: output data for reducible forms
-   for(i = 1, #red,
-      [l, n_1, chi_1, n_2, chi_2, k] = red[i];
-      print(red[i]));
-   \\ Output data for irreducible forms
    file = fileopen("irreducible.gp", "w");
    labelfile = fileopen("labels.txt", "w");
+   labelcount = Map();
    for(i = 1, #irred,
-      \\ print(irred[i]);
       [l, n_0, chi_0, k, forms] = irred[i];
       [n, aplist] = forms[1];
       n_1 = if(k == 2, n, n * l);
@@ -251,14 +254,14 @@ output_files(forms) =
 	 if(l != 2,
 	    chi = charmul(Z, chi, zncharinduce(Z_l, [k - 2]~, Z)));
 	 aplist = [x | x <- aplist, x[1] != l]);
-      z = if(l == 2, 1, znconreyexp(Z_l, [1]~));
+      z = Mod(if(l == 2, 1, znconreyexp(Z_l, [1]~)), l);
       H = charker(Z, chi);
       G = Gamma_H(Z, H);
       g = modular_group_genus(G);
       print([n, k, l], ": genus ", g);
       \\ Provisional label: GL2-l-N-beta-c
       \\ (2 stands for the dimension)
-      beta = (k - 2) % (l - 1);
+      beta = (k - 1) % (l - 1);
       if(!mapisdefined(labelcount, [l, n, beta], &c),
 	 c = 1, c++);
       mapput(labelcount, [l, n, beta], c);
@@ -268,7 +271,7 @@ output_files(forms) =
       listfile = fileopen(concat(label, "/forms.txt"), "w");
       apply(f -> filewrite(listfile, f), forms);
       fileclose(listfile);
-      eps = [[x, chareval(Z, chi, x, [z, l - 1])] | x <- Z.gen];
+      eps = [[x, liftint(chareval(Z, chi, x, [z, l - 1]))] | x <- Z.gen];
       for(j = 0, #aplist,
 	 coefs = aplist[1..j];
 	 iferr(f = eigenform(G, 2, l, eps, coefs),
@@ -288,4 +291,12 @@ output_files(forms) =
 	 break));
    fileclose(labelfile);
    fileclose(file);
+}
+
+output_files(forms) =
+{
+   my(red, irred);
+   [red, irred] = preprocess(forms);
+   output_reducible(red);
+   output_irreducible(irred);
 }
