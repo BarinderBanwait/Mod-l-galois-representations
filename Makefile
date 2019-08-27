@@ -10,6 +10,8 @@ SAGE ?= sage
 
 all: labels.txt reducible.gp irreducible.gp
 
+.DELETE_ON_ERROR:
+
 reducible.gp: forms.gp
 	echo "output_reducible(preprocess(readvec(\"forms.gp\"))[1]);" | $(GP) -q preprocess.gp
 
