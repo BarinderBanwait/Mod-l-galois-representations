@@ -235,8 +235,9 @@ output_reducible(red) =
 */
 output_irreducible(irred) =
 {
-   my(l, n_0, chi_0, k, n, aplist, labelcount,
-      file, labelfile, makefile, listfile);
+   my(l, n_0, chi_0, k, forms, n, aplist, n_1, Z_0, Z_l, Z, chi, z, H,
+      G, g, beta, c, labelcount, label, Z_prim, chi_prim, eps, coefs, s,
+      file, labelfile, makefile, listfile, charfile);
    file = fileopen("irreducible.gp", "w");
    labelfile = fileopen("labels.txt", "w");
    labelcount = Map();
@@ -271,6 +272,20 @@ output_irreducible(irred) =
       listfile = fileopen(concat(label, "/forms.txt"), "w");
       apply(f -> filewrite(listfile, f), forms);
       fileclose(listfile);
+
+      if(beta == 0,
+	 Z_prim = Z_0;
+	 chi_prim = chi_0
+	 ,
+	 Z_prim = znstar(n_0 * l, 1);
+	 chi_prim = charmul(Z_prim, zncharinduce(Z_0, chi_0, Z_prim),
+			    zncharinduce(Z_l, [k - 1]~, Z_prim)));
+      if(type(chi_prim) != "t_INT",
+	 chi_prim = znconreyexp(Z_prim, chi_prim));
+      charfile = fileopen(concat(label, "/character.txt"), "w");
+      filewrite(charfile, concat([l, "-", Z_prim.mod, ".", chi_prim]));
+      fileclose(charfile);
+
       eps = [[x, liftint(chareval(Z, chi, x, [z, l - 1]))] | x <- Z.gen];
       for(j = 0, #aplist,
 	 coefs = aplist[1..j];
