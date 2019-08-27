@@ -28,7 +28,13 @@ mod-%-forms.txt: mod-%-reps.txt
 GL2-%-traces.txt: GL2-%.gp
 	$(SAGE) -c "from dual_pairs.dual_pair_import import dual_pair_import; print(dual_pair_import(\"$<\").frobenius_traces(200))" | sed -e s,\(,[,g -e s,\),],g > $@
 
-.PHONY: traces
+GL2-%-character.txt: GL2-%.gp
+	$(SAGE) character.sage $< > $@
+
+.PHONY: traces characters
 
 traces:
 	$(MAKE) `ls GL2-*.gp | sed -e s/.gp/-traces.txt/g`
+
+characters:
+	$(MAKE) `ls GL2-*.gp | sed -e s/.gp/-character.txt/g`
