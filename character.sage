@@ -26,11 +26,11 @@ def dirichlet_character_label(chi):
     l = G.base_ring().characteristic()
     z = G.zeta()
     o = G.zeta_order()
-    H = pari('idealstar(,{},2)'.format(m))
+    H = pari('znstar({},1)'.format(m))
     cyc = H.getattr('cyc')
     gen = H.getattr('gen')
     v = [chi(g).log(z) * c/o for c, g in zip(cyc, gen)]
-    c = pari('znstar({},1)'.format(m)).znconreyexp(v)
+    c = H.znconreyexp(v)
     return "{}-{}.{}".format(l, m, c)
 
 if len(sys.argv) != 2:
