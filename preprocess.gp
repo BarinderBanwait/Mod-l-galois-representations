@@ -210,11 +210,8 @@ preprocess(forms) =
 
 output_reducible(red) =
 {
-   my(l, n_1, chi_1, n_2, chi_2, k,
-      file);
-   file = fileopen("reducible.gp", "w");
+   my(file = fileopen("reducible.gp", "w"));
    for(i = 1, #red,
-      [l, n_1, chi_1, n_2, chi_2, k] = red[i];
       filewrite(file, red[i]));
    fileclose(file);
 }
