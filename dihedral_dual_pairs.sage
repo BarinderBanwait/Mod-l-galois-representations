@@ -1,5 +1,6 @@
-from dual_pair_from_dihedral_field import dual_pair_from_dihedral_field
+from dual_pairs.dual_pair_from_dihedral_field import dual_pair_from_dihedral_field
 
+# TODO: implement reduction of dual pairs in Sage
 pari.read('dual_pair.gp')
 dual_pair_init = pari('dual_pair_init')
 dual_pair_export = pari('dual_pair_export')
